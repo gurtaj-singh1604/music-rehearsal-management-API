@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import songsRouter from "./api/v1/songs/songs.routes";
+import { errorHandler } from "./middleware/error.middleware";
 
 const app = express();
 
@@ -13,5 +15,9 @@ app.get("/", (_req, res) => {
     message: "Music Rehearsal Management API is running",
   });
 });
+
+app.use("/api/v1/songs", songsRouter);
+
+app.use(errorHandler);
 
 export default app;
