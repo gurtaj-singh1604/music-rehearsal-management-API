@@ -9,6 +9,7 @@ module.exports = {
     ...tsJestTransformCfg,
   },
   roots: ["<rootDir>/test"],
+  setupFiles: ["<rootDir>/test/jest.setup.ts"],
   collectCoverage: true,
   collectCoverageFrom: ["src/**/*.ts"],
   coverageDirectory: "coverage",
