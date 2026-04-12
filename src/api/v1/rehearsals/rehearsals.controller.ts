@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { env } from "../../../config/env";
 import { AppError } from "../../../middleware/error.middleware";
 import { sendSuccess } from "../../../utils/apiResponse";
 import {
@@ -11,8 +12,14 @@ type RehearsalParams = {
   id: string;
 };
 
-const getValidationMessage = (error: any): string => {
-  return error.details.map((detail: any) => detail.message).join(", ");
+type UpcomingRehearsalsQuery = {
+  hoursAhead?: string;
+};
+
+const getValidationMessage = (error: {
+  details: Array<{ message: string }>;
+}): string => {
+  return error.details.map((detail) => detail.message).join(", ");
 };
 
 /**
@@ -53,6 +60,36 @@ export const getAllRehearsals = async (
     const rehearsals = await rehearsalsService.getAllRehearsals();
 
     sendSuccess(res, 200, "Rehearsals retrieved successfully", rehearsals);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Gets upcoming rehearsals for reminder checks.
+ */
+export const getUpcomingRehearsals = async (
+  req: Request<Record<string, never>, unknown, unknown, UpcomingRehearsalsQuery>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const hoursAhead = req.query.hoursAhead
+      ? Number(req.query.hoursAhead)
+      : env.reminderWindowHours;
+
+    if (Number.isNaN(hoursAhead) || hoursAhead <= 0) {
+      throw new AppError("hoursAhead must be a positive number", 400);
+    }
+
+    const rehearsals = await rehearsalsService.getUpcomingRehearsals(hoursAhead);
+
+    sendSuccess(
+      res,
+      200,
+      "Upcoming rehearsals retrieved successfully",
+      rehearsals
+    );
   } catch (err) {
     next(err);
   }

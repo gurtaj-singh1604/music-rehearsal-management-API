@@ -58,7 +58,7 @@ describe("Rehearsals Routes", () => {
     const mockedRehearsals = [
       {
         id: "rehearsal123",
-        date: "2026-04-20T18:00:00.000Z",
+        date: "2099-04-20T18:00:00.000Z",
         location: "Studio A",
         goals: ["Practice harmonies", "Tighten transitions"],
         setlistId: "setlist123",
@@ -76,6 +76,43 @@ describe("Rehearsals Routes", () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.data).toHaveLength(1);
+  });
+
+  it("should get upcoming rehearsals", async () => {
+    const mockedRehearsals = [
+      {
+        id: "rehearsal123",
+        date: "2099-04-20T18:00:00.000Z",
+        location: "Studio A",
+        goals: ["Practice harmonies"],
+        setlistId: "setlist123",
+        createdAt: "2026-04-07T18:00:00.000Z",
+        updatedAt: "2026-04-07T18:00:00.000Z",
+      },
+    ];
+
+    (rehearsalsRepository.getAllRehearsals as jest.Mock).mockResolvedValue(
+      mockedRehearsals
+    );
+
+    const response = await request(app).get(
+      "/api/v1/rehearsals/upcoming-reminders?hoursAhead=999999"
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe(
+      "Upcoming rehearsals retrieved successfully"
+    );
+  });
+
+  it("should return validation error for invalid hoursAhead query", async () => {
+    const response = await request(app).get(
+      "/api/v1/rehearsals/upcoming-reminders?hoursAhead=-1"
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
   });
 
   it("should get a rehearsal by id", async () => {

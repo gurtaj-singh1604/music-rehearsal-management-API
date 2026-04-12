@@ -7,7 +7,7 @@ const options: swaggerJSDoc.Options = {
       title: "Music Rehearsal Management API",
       version: "1.0.0",
       description:
-        "Milestone 1 API documentation for Songs, Setlists, and Rehearsals.",
+        "Milestone 2 API documentation for Songs, Setlists, Rehearsals, and reminder checks.",
     },
     servers: [
       {
@@ -247,6 +247,7 @@ const options: swaggerJSDoc.Options = {
           },
         },
       },
+
       "/api/v1/songs/{id}": {
         get: {
           tags: ["Songs"],
@@ -325,6 +326,7 @@ const options: swaggerJSDoc.Options = {
           },
         },
       },
+
       "/api/v1/setlists": {
         post: {
           tags: ["Setlists"],
@@ -356,6 +358,7 @@ const options: swaggerJSDoc.Options = {
           },
         },
       },
+
       "/api/v1/setlists/{id}": {
         get: {
           tags: ["Setlists"],
@@ -429,6 +432,7 @@ const options: swaggerJSDoc.Options = {
           },
         },
       },
+
       "/api/v1/rehearsals": {
         post: {
           tags: ["Rehearsals"],
@@ -460,6 +464,38 @@ const options: swaggerJSDoc.Options = {
           },
         },
       },
+
+      "/api/v1/rehearsals/upcoming-reminders": {
+        get: {
+          tags: ["Rehearsals"],
+          summary: "Get upcoming rehearsals for reminder checks",
+          parameters: [
+            {
+              name: "hoursAhead",
+              in: "query",
+              required: false,
+              schema: {
+                type: "number",
+                example: 24,
+              },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Upcoming rehearsals retrieved successfully",
+            },
+            "400": {
+              description: "Invalid hoursAhead value",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+
       "/api/v1/rehearsals/{id}": {
         get: {
           tags: ["Rehearsals"],
