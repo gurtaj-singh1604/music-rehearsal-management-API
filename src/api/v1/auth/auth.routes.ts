@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { loginUser, registerUser } from "./auth.controller";
+import { verifyFirebaseToken } from "../../../middleware/auth.middleware";
+import { getCurrentUser, loginUser, registerUser } from "./auth.controller";
 
 const authRouter = Router();
 
 authRouter.post("/register", registerUser);
 authRouter.post("/login", loginUser);
+authRouter.get("/me", verifyFirebaseToken, getCurrentUser);
 
 export default authRouter;

@@ -61,3 +61,24 @@ export const loginUser = async (
     next(err);
   }
 };
+
+/**
+ * Returns the currently authenticated user from the verified token.
+ */
+export const getCurrentUser = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      throw new AppError("Authenticated user not found", 401);
+    }
+
+    sendSuccess(res, 200, "Current user retrieved successfully", authUser);
+  } catch (err) {
+    next(err);
+  }
+};
