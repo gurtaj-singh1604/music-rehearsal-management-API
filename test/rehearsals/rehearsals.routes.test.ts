@@ -1,94 +1,180 @@
 import request from "supertest";
-import app from "../../src/app";
 
-jest.mock("../../src/api/v1/rehearsals/rehearsals.repository", () => ({
-  createRehearsal: jest.fn(),
-  getAllRehearsals: jest.fn(),
-  getRehearsalById: jest.fn(),
-  updateRehearsal: jest.fn(),
-  deleteRehearsal: jest.fn(),
+jest.mock("../../src/middleware/auth.middleware", () => ({
+  verifyFirebaseToken: (
+    _req: unknown,
+    res: { locals: { authUser: { uid: string; email: string; role: string } } },
+    next: () => void
+  ) => {
+    res.locals.authUser = {
+      uid: "admin-user-id",
+      email: "admin@test.com",
+      role: "admin",
+    };
+    next();
+  },
+  requireRole:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) => {
+      next();
+    },
 }));
 
-import * as rehearsalsRepository from "../../src/api/v1/rehearsals/rehearsals.repository";
+jest.mock("../../src/api/v1/setlists/setlists.repository", () => ({
+  createSetlist: jest.fn(),
+  getAllSetlists: jest.fn(),
+  getSetlistById: jest.fn(),
+  updateSetlist: jest.fn(),
+  deleteSetlist: jest.fn(),
+}));
 
-describe("Rehearsals Routes", () => {
+import app from "../../src/app";
+import * as setlistsRepository from "../../src/api/v1/setlists/setlists.repository";
+
+describe("Setlists Routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should create a rehearsal", async () => {
-    const mockedRehearsal = {
-      id: "rehearsal123",
-      date: "2026-04-20T18:00:00.000Z",
-      location: "Studio A",
-      goals: ["Practice harmonies", "Tighten transitions"],
-      setlistId: "setlist123",
+  it("should create a setlist", async () => {
+    const mockedSetlist = {
+      id: "setlist123",
+      name: "Practice Set 1",
+      songIds: ["song123"],
+      notes: "Warm-up rehearsal set",
       createdAt: "2026-04-07T18:00:00.000Z",
       updatedAt: "2026-04-07T18:00:00.000Z",
     };
 
-    (rehearsalsRepository.createRehearsal as jest.Mock).mockResolvedValue(
-      mockedRehearsal
+    (setlistsRepository.createSetlist as jest.Mock).mockResolvedValue(
+      mockedSetlist
     );
 
-    const response = await request(app).post("/api/v1/rehearsals").send({
-      date: "2026-04-20T18:00:00.000Z",
-      location: "Studio A",
-      goals: ["Practice harmonies", "Tighten transitions"],
-      setlistId: "setlist123",
+    const response = await request(app).post("/api/v1/setlists").send({
+      name: "Practice Set 1",
+      songIds: ["song123"],
+      notes: "Warm-up rehearsal set",
     });
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(201);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.id).toBe("setlist123");
   });
 
-  it("should return validation error when creating a rehearsal with bad data", async () => {
-    const response = await request(app).post("/api/v1/rehearsals").send({
-      date: "not-a-real-date",
-      location: "",
-      goals: [],
-      setlistId: "",
+  it("should return validation error when creating a setlist with bad data", async () => {
+    const response = await request(app).post("/api/v1/setlists").send({
+      name: "",
+      songIds: [],
     });
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
   });
 
-  it("should get all rehearsals only when authenticated", async () => {
-    const response = await request(app).get("/api/v1/rehearsals");
+  it("should get all setlists", async () => {
+    const mockedSetlists = [
+      {
+        id: "setlist123",
+        name: "Practice Set 1",
+        songIds: ["song123"],
+        notes: "Warm-up rehearsal set",
+        createdAt: "2026-04-07T18:00:00.000Z",
+        updatedAt: "2026-04-07T18:00:00.000Z",
+      },
+    ];
 
-    expect(response.status).toBe(401);
-  });
-
-  it("should validate upcoming reminder query parameters", async () => {
-    const response = await request(app).get(
-      "/api/v1/rehearsals/upcoming-reminders?sortOrder=wrong"
+    (setlistsRepository.getAllSetlists as jest.Mock).mockResolvedValue(
+      mockedSetlists
     );
 
-    expect(response.status).toBe(401);
+    const response = await request(app).get("/api/v1/setlists");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveLength(1);
   });
 
-  it("should get a rehearsal by id only when authenticated", async () => {
-    const response = await request(app).get(
-      "/api/v1/rehearsals/rehearsal123"
+  it("should get a setlist by id", async () => {
+    const mockedSetlist = {
+      id: "setlist123",
+      name: "Practice Set 1",
+      songIds: ["song123"],
+      notes: "Warm-up rehearsal set",
+      createdAt: "2026-04-07T18:00:00.000Z",
+      updatedAt: "2026-04-07T18:00:00.000Z",
+    };
+
+    (setlistsRepository.getSetlistById as jest.Mock).mockResolvedValue(
+      mockedSetlist
     );
 
-    expect(response.status).toBe(401);
+    const response = await request(app).get("/api/v1/setlists/setlist123");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.id).toBe("setlist123");
   });
 
-  it("should update a rehearsal only when authenticated", async () => {
-    const response = await request(app)
-      .put("/api/v1/rehearsals/rehearsal123")
-      .send({
-        location: "Studio B",
-      });
+  it("should return 404 when setlist is not found", async () => {
+    (setlistsRepository.getSetlistById as jest.Mock).mockResolvedValue(null);
 
-    expect(response.status).toBe(401);
+    const response = await request(app).get("/api/v1/setlists/not-found");
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Setlist not found");
   });
 
-  it("should delete a rehearsal only when authenticated", async () => {
-    const response = await request(app).delete(
-      "/api/v1/rehearsals/rehearsal123"
+  it("should update a setlist", async () => {
+    const mockedSetlist = {
+      id: "setlist123",
+      name: "Practice Set Updated",
+      songIds: ["song123"],
+      notes: "Updated rehearsal order",
+      createdAt: "2026-04-07T18:00:00.000Z",
+      updatedAt: "2026-04-07T19:00:00.000Z",
+    };
+
+    (setlistsRepository.updateSetlist as jest.Mock).mockResolvedValue(
+      mockedSetlist
     );
 
-    expect(response.status).toBe(401);
+    const response = await request(app).put("/api/v1/setlists/setlist123").send({
+      name: "Practice Set Updated",
+      notes: "Updated rehearsal order",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.name).toBe("Practice Set Updated");
+  });
+
+  it("should return validation error when updating a setlist with bad data", async () => {
+    const response = await request(app).put("/api/v1/setlists/setlist123").send({
+      name: "",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  it("should delete a setlist", async () => {
+    (setlistsRepository.deleteSetlist as jest.Mock).mockResolvedValue(true);
+
+    const response = await request(app).delete("/api/v1/setlists/setlist123");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe("Setlist deleted successfully");
+  });
+
+  it("should return 404 when deleting a setlist that does not exist", async () => {
+    (setlistsRepository.deleteSetlist as jest.Mock).mockResolvedValue(false);
+
+    const response = await request(app).delete("/api/v1/setlists/not-found");
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Setlist not found");
   });
 });
