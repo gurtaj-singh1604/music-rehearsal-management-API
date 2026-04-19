@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import { adminAuth } from "../config/firebase";
+import { AppRole } from "../api/v1/auth/auth.model";
 import { AppError } from "./error.middleware";
 
 export type AuthenticatedUser = {
   uid: string;
   email?: string;
-  role: string;
+  role: AppRole;
 };
 
 type AuthenticatedResponseLocals = {
@@ -42,7 +43,9 @@ export const verifyFirebaseToken = async (
       uid: decodedToken.uid,
       email: decodedToken.email,
       role:
-        typeof decodedToken.role === "string" ? decodedToken.role : "member",
+        decodedToken.role === "admin" || decodedToken.role === "member"
+          ? decodedToken.role
+          : "member",
     };
 
     next();
@@ -50,3 +53,31 @@ export const verifyFirebaseToken = async (
     next(new AppError("Invalid or expired authentication token", 401));
   }
 };
+
+/**
+ * Restricts access to one or more allowed roles.
+ * @param allowedRoles Roles allowed to access the route.
+ */
+export const requireRole =
+  (...allowedRoles: AppRole[]) =>
+  (
+    _req: Request,
+    res: Response<unknown, AuthenticatedResponseLocals>,
+    next: NextFunction
+  ): void => {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      next(new AppError("Authenticated user not found", 401));
+      return;
+    }
+
+    if (!allowedRoles.includes(authUser.role)) {
+      next(
+        new AppError("You do not have permission to access this resource", 403)
+      );
+      return;
+    }
+
+    next();
+  };
