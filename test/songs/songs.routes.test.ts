@@ -1,5 +1,24 @@
 import request from "supertest";
-import app from "../../src/app";
+
+jest.mock("../../src/middleware/auth.middleware", () => ({
+  verifyFirebaseToken: (
+    _req: unknown,
+    res: { locals: { authUser: { uid: string; email: string; role: string } } },
+    next: () => void
+  ) => {
+    res.locals.authUser = {
+      uid: "admin-user-id",
+      email: "admin@test.com",
+      role: "admin",
+    };
+    next();
+  },
+  requireRole:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) => {
+      next();
+    },
+}));
 
 jest.mock("../../src/api/v1/songs/songs.repository", () => ({
   createSong: jest.fn(),
@@ -9,6 +28,7 @@ jest.mock("../../src/api/v1/songs/songs.repository", () => ({
   deleteSong: jest.fn(),
 }));
 
+import app from "../../src/app";
 import * as songsRepository from "../../src/api/v1/songs/songs.repository";
 
 describe("Songs Routes", () => {
