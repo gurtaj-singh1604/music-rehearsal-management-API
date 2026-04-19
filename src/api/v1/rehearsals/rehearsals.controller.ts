@@ -4,6 +4,7 @@ import { AppError } from "../../../middleware/error.middleware";
 import { sendSuccess } from "../../../utils/apiResponse";
 import {
   createRehearsalSchema,
+  upcomingRehearsalsQuerySchema,
   updateRehearsalSchema,
 } from "./rehearsals.validation";
 import * as rehearsalsService from "./rehearsals.service";
@@ -14,6 +15,8 @@ type RehearsalParams = {
 
 type UpcomingRehearsalsQuery = {
   hoursAhead?: string;
+  location?: string;
+  sortOrder?: "asc" | "desc";
 };
 
 const getValidationMessage = (error: {
@@ -66,7 +69,7 @@ export const getAllRehearsals = async (
 };
 
 /**
- * Gets upcoming rehearsals for reminder checks.
+ * Gets upcoming rehearsals using filtering and sorting options.
  */
 export const getUpcomingRehearsals = async (
   req: Request<Record<string, never>, unknown, unknown, UpcomingRehearsalsQuery>,
@@ -74,15 +77,25 @@ export const getUpcomingRehearsals = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const hoursAhead = req.query.hoursAhead
-      ? Number(req.query.hoursAhead)
-      : env.reminderWindowHours;
+    const { error, value } = upcomingRehearsalsQuerySchema.validate(req.query, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
 
-    if (Number.isNaN(hoursAhead) || hoursAhead <= 0) {
-      throw new AppError("hoursAhead must be a positive number", 400);
+    if (error) {
+      throw new AppError(getValidationMessage(error), 400);
     }
 
-    const rehearsals = await rehearsalsService.getUpcomingRehearsals(hoursAhead);
+    const hoursAhead =
+      typeof value.hoursAhead === "number"
+        ? value.hoursAhead
+        : env.reminderWindowHours;
+
+    const rehearsals = await rehearsalsService.getUpcomingRehearsals({
+      hoursAhead,
+      location: value.location,
+      sortOrder: value.sortOrder,
+    });
 
     sendSuccess(
       res,

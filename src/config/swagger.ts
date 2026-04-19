@@ -7,7 +7,7 @@ const options: swaggerJSDoc.Options = {
       title: "Music Rehearsal Management API",
       version: "1.0.0",
       description:
-        "Milestone 2 API documentation for Songs, Setlists, Rehearsals, and reminder checks.",
+        "Milestone 3 API documentation for Songs, Setlists, Rehearsals, authentication, authorization, and reminder checks.",
     },
     servers: [
       {
@@ -16,11 +16,19 @@ const options: swaggerJSDoc.Options = {
       },
     ],
     tags: [
+      { name: "Auth", description: "Authentication endpoints" },
       { name: "Songs", description: "Songs CRUD endpoints" },
       { name: "Setlists", description: "Setlists CRUD endpoints" },
       { name: "Rehearsals", description: "Rehearsals CRUD endpoints" },
     ],
     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
       schemas: {
         Song: {
           type: "object",
@@ -174,6 +182,7 @@ const options: swaggerJSDoc.Options = {
           properties: {
             date: {
               type: "string",
+              format: "date-time",
               example: "2026-04-20T18:00:00.000Z",
             },
             location: { type: "string", example: "Studio A" },
@@ -190,6 +199,7 @@ const options: swaggerJSDoc.Options = {
           properties: {
             date: {
               type: "string",
+              format: "date-time",
               example: "2026-04-20T18:00:00.000Z",
             },
             location: { type: "string", example: "Studio B" },
@@ -199,6 +209,38 @@ const options: swaggerJSDoc.Options = {
               example: ["Fix ending", "Practice harmonies"],
             },
             setlistId: { type: "string", example: "setlist123" },
+          },
+        },
+        RegisterUserInput: {
+          type: "object",
+          required: ["email", "password"],
+          properties: {
+            email: {
+              type: "string",
+              example: "gurtaj.member@test.com",
+            },
+            password: {
+              type: "string",
+              example: "test1234",
+            },
+            displayName: {
+              type: "string",
+              example: "Gurtaj Member",
+            },
+          },
+        },
+        LoginUserInput: {
+          type: "object",
+          required: ["email", "password"],
+          properties: {
+            email: {
+              type: "string",
+              example: "gurtaj.member@test.com",
+            },
+            password: {
+              type: "string",
+              example: "test1234",
+            },
           },
         },
         ErrorResponse: {
@@ -211,10 +253,104 @@ const options: swaggerJSDoc.Options = {
       },
     },
     paths: {
+      "/api/v1/auth/register": {
+        post: {
+          tags: ["Auth"],
+          summary: "Register a new user",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/RegisterUserInput" },
+              },
+            },
+          },
+          responses: {
+            "201": {
+              description: "User registered successfully",
+            },
+            "400": {
+              description: "Validation error",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "409": {
+              description: "Email already registered",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      "/api/v1/auth/login": {
+        post: {
+          tags: ["Auth"],
+          summary: "Log in a user",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/LoginUserInput" },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Login successful",
+            },
+            "400": {
+              description: "Validation error",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "401": {
+              description: "Invalid email or password",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      "/api/v1/auth/me": {
+        get: {
+          tags: ["Auth"],
+          summary: "Get the currently authenticated user",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            "200": {
+              description: "Current user retrieved successfully",
+            },
+            "401": {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+
       "/api/v1/songs": {
         post: {
           tags: ["Songs"],
           summary: "Create a new song",
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -235,14 +371,24 @@ const options: swaggerJSDoc.Options = {
                 },
               },
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
           },
         },
         get: {
           tags: ["Songs"],
           summary: "Get all songs",
+          security: [{ bearerAuth: [] }],
           responses: {
             "200": {
               description: "Songs retrieved successfully",
+            },
+            "401": {
+              description: "Unauthorized",
             },
           },
         },
@@ -252,6 +398,7 @@ const options: swaggerJSDoc.Options = {
         get: {
           tags: ["Songs"],
           summary: "Get a song by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -263,6 +410,9 @@ const options: swaggerJSDoc.Options = {
           responses: {
             "200": {
               description: "Song retrieved successfully",
+            },
+            "401": {
+              description: "Unauthorized",
             },
             "404": {
               description: "Song not found",
@@ -277,6 +427,7 @@ const options: swaggerJSDoc.Options = {
         put: {
           tags: ["Songs"],
           summary: "Update a song by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -300,6 +451,12 @@ const options: swaggerJSDoc.Options = {
             "400": {
               description: "Validation error",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
             "404": {
               description: "Song not found",
             },
@@ -308,6 +465,7 @@ const options: swaggerJSDoc.Options = {
         delete: {
           tags: ["Songs"],
           summary: "Delete a song by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -320,6 +478,12 @@ const options: swaggerJSDoc.Options = {
             "200": {
               description: "Song deleted successfully",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
             "404": {
               description: "Song not found",
             },
@@ -331,6 +495,7 @@ const options: swaggerJSDoc.Options = {
         post: {
           tags: ["Setlists"],
           summary: "Create a new setlist",
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -346,14 +511,24 @@ const options: swaggerJSDoc.Options = {
             "400": {
               description: "Validation error",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
           },
         },
         get: {
           tags: ["Setlists"],
           summary: "Get all setlists",
+          security: [{ bearerAuth: [] }],
           responses: {
             "200": {
               description: "Setlists retrieved successfully",
+            },
+            "401": {
+              description: "Unauthorized",
             },
           },
         },
@@ -363,6 +538,7 @@ const options: swaggerJSDoc.Options = {
         get: {
           tags: ["Setlists"],
           summary: "Get a setlist by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -375,6 +551,9 @@ const options: swaggerJSDoc.Options = {
             "200": {
               description: "Setlist retrieved successfully",
             },
+            "401": {
+              description: "Unauthorized",
+            },
             "404": {
               description: "Setlist not found",
             },
@@ -383,6 +562,7 @@ const options: swaggerJSDoc.Options = {
         put: {
           tags: ["Setlists"],
           summary: "Update a setlist by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -406,6 +586,12 @@ const options: swaggerJSDoc.Options = {
             "400": {
               description: "Validation error",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
             "404": {
               description: "Setlist not found",
             },
@@ -414,6 +600,7 @@ const options: swaggerJSDoc.Options = {
         delete: {
           tags: ["Setlists"],
           summary: "Delete a setlist by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -426,6 +613,12 @@ const options: swaggerJSDoc.Options = {
             "200": {
               description: "Setlist deleted successfully",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
             "404": {
               description: "Setlist not found",
             },
@@ -437,6 +630,7 @@ const options: swaggerJSDoc.Options = {
         post: {
           tags: ["Rehearsals"],
           summary: "Create a new rehearsal",
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -452,14 +646,24 @@ const options: swaggerJSDoc.Options = {
             "400": {
               description: "Validation error",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
           },
         },
         get: {
           tags: ["Rehearsals"],
           summary: "Get all rehearsals",
+          security: [{ bearerAuth: [] }],
           responses: {
             "200": {
               description: "Rehearsals retrieved successfully",
+            },
+            "401": {
+              description: "Unauthorized",
             },
           },
         },
@@ -469,6 +673,7 @@ const options: swaggerJSDoc.Options = {
         get: {
           tags: ["Rehearsals"],
           summary: "Get upcoming rehearsals for reminder checks",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "hoursAhead",
@@ -479,13 +684,40 @@ const options: swaggerJSDoc.Options = {
                 example: 24,
               },
             },
+            {
+              name: "location",
+              in: "query",
+              required: false,
+              schema: {
+                type: "string",
+                example: "Studio A",
+              },
+            },
+            {
+              name: "sortOrder",
+              in: "query",
+              required: false,
+              schema: {
+                type: "string",
+                enum: ["asc", "desc"],
+                example: "asc",
+              },
+            },
           ],
           responses: {
             "200": {
               description: "Upcoming rehearsals retrieved successfully",
             },
             "400": {
-              description: "Invalid hoursAhead value",
+              description: "Invalid query parameters",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -500,6 +732,7 @@ const options: swaggerJSDoc.Options = {
         get: {
           tags: ["Rehearsals"],
           summary: "Get a rehearsal by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -512,6 +745,9 @@ const options: swaggerJSDoc.Options = {
             "200": {
               description: "Rehearsal retrieved successfully",
             },
+            "401": {
+              description: "Unauthorized",
+            },
             "404": {
               description: "Rehearsal not found",
             },
@@ -520,6 +756,7 @@ const options: swaggerJSDoc.Options = {
         put: {
           tags: ["Rehearsals"],
           summary: "Update a rehearsal by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -545,6 +782,12 @@ const options: swaggerJSDoc.Options = {
             "400": {
               description: "Validation error",
             },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
+            },
             "404": {
               description: "Rehearsal not found",
             },
@@ -553,6 +796,7 @@ const options: swaggerJSDoc.Options = {
         delete: {
           tags: ["Rehearsals"],
           summary: "Delete a rehearsal by ID",
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: "id",
@@ -564,6 +808,12 @@ const options: swaggerJSDoc.Options = {
           responses: {
             "200": {
               description: "Rehearsal deleted successfully",
+            },
+            "401": {
+              description: "Unauthorized",
+            },
+            "403": {
+              description: "Forbidden",
             },
             "404": {
               description: "Rehearsal not found",

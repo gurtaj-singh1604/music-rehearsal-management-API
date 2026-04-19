@@ -41,10 +41,83 @@ describe("Rehearsals Service", () => {
       },
     ]);
 
-    const result = await getUpcomingRehearsals(24);
+    const result = await getUpcomingRehearsals({
+      hoursAhead: 24,
+    });
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("inside-window");
+  });
+
+  it("should filter upcoming rehearsals by location", async () => {
+    jest
+      .spyOn(Date, "now")
+      .mockReturnValue(new Date("2026-04-20T12:00:00.000Z").getTime());
+
+    (rehearsalsRepository.getAllRehearsals as jest.Mock).mockResolvedValue([
+      {
+        id: "studio-a",
+        date: "2026-04-20T18:00:00.000Z",
+        location: "Studio A",
+        goals: ["Practice harmonies"],
+        setlistId: "setlist123",
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "studio-b",
+        date: "2026-04-20T19:00:00.000Z",
+        location: "Studio B",
+        goals: ["Practice ending"],
+        setlistId: "setlist123",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+
+    const result = await getUpcomingRehearsals({
+      hoursAhead: 24,
+      location: "Studio A",
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].location).toBe("Studio A");
+  });
+
+  it("should sort upcoming rehearsals in descending date order", async () => {
+    jest
+      .spyOn(Date, "now")
+      .mockReturnValue(new Date("2026-04-20T12:00:00.000Z").getTime());
+
+    (rehearsalsRepository.getAllRehearsals as jest.Mock).mockResolvedValue([
+      {
+        id: "earlier",
+        date: "2026-04-20T18:00:00.000Z",
+        location: "Studio A",
+        goals: ["Practice harmonies"],
+        setlistId: "setlist123",
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "later",
+        date: "2026-04-20T20:00:00.000Z",
+        location: "Studio A",
+        goals: ["Practice ending"],
+        setlistId: "setlist123",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+
+    const result = await getUpcomingRehearsals({
+      hoursAhead: 24,
+      sortOrder: "desc",
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe("later");
+    expect(result[1].id).toBe("earlier");
   });
 
   it("should return an empty array when no rehearsals are upcoming", async () => {
@@ -64,7 +137,9 @@ describe("Rehearsals Service", () => {
       },
     ]);
 
-    const result = await getUpcomingRehearsals(24);
+    const result = await getUpcomingRehearsals({
+      hoursAhead: 24,
+    });
 
     expect(result).toEqual([]);
   });

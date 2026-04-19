@@ -6,6 +6,12 @@ import {
 } from "./rehearsals.model";
 import * as rehearsalsRepository from "./rehearsals.repository";
 
+type UpcomingRehearsalsOptions = {
+  hoursAhead: number;
+  location?: string;
+  sortOrder?: "asc" | "desc";
+};
+
 /**
  * Creates a new rehearsal.
  * @param data Rehearsal input data.
@@ -26,31 +32,49 @@ export const getAllRehearsals = async (): Promise<Rehearsal[]> => {
 };
 
 /**
- * Gets upcoming rehearsals within the provided number of hours.
- * @param hoursAhead Number of hours to look ahead.
+ * Gets upcoming rehearsals using advanced filtering and sorting options.
+ * @param options Reminder query options.
  * @returns A list of upcoming rehearsals.
  */
 export const getUpcomingRehearsals = async (
-  hoursAhead: number
+  options: UpcomingRehearsalsOptions
 ): Promise<Rehearsal[]> => {
   const rehearsals = await rehearsalsRepository.getAllRehearsals();
   const now = Date.now();
-  const limit = now + hoursAhead * 60 * 60 * 1000;
+  const limit = now + options.hoursAhead * 60 * 60 * 1000;
 
-  return rehearsals
-    .filter((rehearsal) => {
-      const rehearsalTime = new Date(rehearsal.date).getTime();
+  const filteredRehearsals = rehearsals.filter((rehearsal) => {
+    const rehearsalTime = new Date(rehearsal.date).getTime();
 
+    if (Number.isNaN(rehearsalTime)) {
+      return false;
+    }
+
+    const isInsideWindow = rehearsalTime >= now && rehearsalTime <= limit;
+
+    if (!isInsideWindow) {
+      return false;
+    }
+
+    if (options.location) {
       return (
-        !Number.isNaN(rehearsalTime) &&
-        rehearsalTime >= now &&
-        rehearsalTime <= limit
+        rehearsal.location.toLowerCase() === options.location.toLowerCase()
       );
-    })
-    .sort(
-      (first, second) =>
-        new Date(first.date).getTime() - new Date(second.date).getTime()
-    );
+    }
+
+    return true;
+  });
+
+  const sortOrder = options.sortOrder ?? "asc";
+
+  return filteredRehearsals.sort((first, second) => {
+    const firstTime = new Date(first.date).getTime();
+    const secondTime = new Date(second.date).getTime();
+
+    return sortOrder === "desc"
+      ? secondTime - firstTime
+      : firstTime - secondTime;
+  });
 };
 
 /**
