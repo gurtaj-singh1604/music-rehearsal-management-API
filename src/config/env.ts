@@ -29,6 +29,7 @@ const parseNumber = (
 export const env = {
   port: process.env.PORT || "3000",
   firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "",
+  firebaseWebApiKey: process.env.FIREBASE_WEB_API_KEY || "",
   cronEnabled: parseBoolean(process.env.CRON_ENABLED, true),
   reminderWindowHours: parseNumber(process.env.REMINDER_WINDOW_HOURS, 24),
   cronSchedule: process.env.CRON_SCHEDULE || "*/1 * * * *",

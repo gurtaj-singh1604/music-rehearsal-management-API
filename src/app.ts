@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
+import authRouter from "./api/v1/auth/auth.routes";
 import songsRouter from "./api/v1/songs/songs.routes";
 import setlistsRouter from "./api/v1/setlists/setlists.routes";
 import rehearsalsRouter from "./api/v1/rehearsals/rehearsals.routes";
@@ -26,6 +27,7 @@ app.get("/api-docs.json", (_req, res) => {
   res.status(200).json(swaggerSpec);
 });
 
+app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/songs", songsRouter);
 app.use("/api/v1/setlists", setlistsRouter);
 app.use("/api/v1/rehearsals", rehearsalsRouter);

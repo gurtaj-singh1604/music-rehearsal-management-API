@@ -7,7 +7,8 @@ export default [
       "coverage/**",
       "node_modules/**",
       "jest.config.js",
-      "eslint.config.mjs"
+      "eslint.config.mjs",
+      "scripts/**/*.cjs"
     ],
   },
   ...tseslint.configs.recommended,
@@ -23,7 +24,7 @@ export default [
       "@typescript-eslint/typedef": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { "argsIgnorePattern": "^_" }
+        { argsIgnorePattern: "^_" }
       ]
     },
   },

@@ -1,6 +1,12 @@
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
-import { cert, getApps, initializeApp, ServiceAccount } from "firebase-admin/app";
+import {
+  cert,
+  getApps,
+  initializeApp,
+  ServiceAccount,
+} from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { env } from "./env";
 
@@ -28,3 +34,4 @@ const firebaseApp =
       });
 
 export const db = getFirestore(firebaseApp);
+export const adminAuth = getAuth(firebaseApp);
