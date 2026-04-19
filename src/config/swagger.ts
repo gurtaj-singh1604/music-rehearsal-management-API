@@ -16,6 +16,7 @@ const options: swaggerJSDoc.Options = {
       },
     ],
     tags: [
+      { name: "System", description: "System and health endpoints" },
       { name: "Auth", description: "Authentication endpoints" },
       { name: "Songs", description: "Songs CRUD endpoints" },
       { name: "Setlists", description: "Setlists CRUD endpoints" },
@@ -30,6 +31,15 @@ const options: swaggerJSDoc.Options = {
         },
       },
       schemas: {
+        HealthResponse: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Music Rehearsal Management API is running",
+            },
+          },
+        },
         Song: {
           type: "object",
           properties: {
@@ -253,6 +263,23 @@ const options: swaggerJSDoc.Options = {
       },
     },
     paths: {
+      "/": {
+        get: {
+          tags: ["System"],
+          summary: "Health check",
+          responses: {
+            "200": {
+              description: "API is running",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/HealthResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+
       "/api/v1/auth/register": {
         post: {
           tags: ["Auth"],
